@@ -12,12 +12,13 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Buildozer dependencies
+      - name: Install Buildozer and Fixed Python-for-Android
         run: |
           sudo apt update
           sudo apt install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libsqlite3-dev gawk libffi-dev python3-virtualenv
           pip install --upgrade pip
           pip install --upgrade "cython<3.0.0" buildozer
+          pip install git+https://github.com
 
       - name: Create buildozer.spec automatically
         run: |
@@ -44,14 +45,24 @@ jobs:
           warn_on_root = 0
           EOF
 
-      - name: Build APK Clean
+      - name: Pre-accept Android Licenses and Build
         run: |
-          # Inicializa a pasta para o Buildozer criar a estrutura interna
+          # 1. Cria a pasta padrão onde o Buildozer vai estruturar o SDK
+          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin || true
+          
+          # 2. Executa uma ferramenta nativa do Buildozer para forçar o download inicial do SDK básico
           buildozer android debug || true
           
-          # Remove e limpa a flag antiga diretamente dentro dos arquivos do python-for-android para impedir o erro
-          find /home/runner/.local/lib/ -name "toolchain.py" -exec sed -i 's/--ignore-setup-py//g' {} + || true
-          find /home/runner/ -name "toolchain.py" -exec sed -i 's/--ignore-setup-py//g' {} + || true
-          
-          # Roda a compilação real com a flag completamente neutralizada
-          yes | buildozer android debug
+          # 3. Força o aceite de TODAS as licenças diretamente no gerenciador oficial do SDK do Android
+          if [ -d "/home/runner/.buildozer/android/platform/android-sdk/cmdline-tools" ]; then
+            yes | find /home/runner/.buildozer/android/platform/android-sdk/ -name "sdkmanager" -exec {} --licenses \; || true
+          fi
+
+          # 4. Agora roda a compilação real com o ambiente 100% licenciado e aprovado
+          buildozer android debug
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BioPoint-APK
+          path: bin/*.apk
