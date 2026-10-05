@@ -49,18 +49,14 @@ jobs:
           # 1. Inicia o buildozer. Ele vai baixar o SDK da Google e falhar na checagem inicial da licença
           buildozer android debug || true
           
-          # 2. Varre o sistema para encontrar o local exato onde o sdkmanager foi extraído
-          SDKMANAGER_PATH=$(find /home/runner/ -name "sdkmanager" -type f | head -n 1)
+          # 2. Localiza o sdkmanager e injeta as licenças limpando os argumentos via xargs
+          echo "Injetando aceitação de licenças..."
+          find /home/runner/.buildozer/android/platform/ -name "sdkmanager" -type f | xargs -I {} sh -c 'yes | {} --licenses' || true
           
-          # 3. Se encontrar o gerenciador, injeta a aprovação automática de todas as licenças
-          if [ ! -z "$SDKMANAGER_PATH" ]; then
-            echo "Gerenciador do SDK encontrado em: $SDKMANAGER_PATH"
-            yes | $SDKMANAGER_PATH --licenses || true
-          else
-            echo "Aviso: sdkmanager não foi encontrado na primeira passagem."
-          fi
+          # 3. Força explicitamente a instalação do pacote build-tools e aidl que estavam faltando
+          find /home/runner/.buildozer/android/platform/ -name "sdkmanager" -type f | head -n 1 | xargs -I {} sh -c 'yes | {} "build-tools;33.0.2" "platforms;android-33"' || true
           
-          # 4. Roda o buildozer novamente; agora as licenças já estarão gravadas no disco do servidor
+          # 4. Roda o buildozer novamente com o ecossistema totalmente liberado e licenciado
           buildozer android debug
 
       - name: Upload APK Artifact
