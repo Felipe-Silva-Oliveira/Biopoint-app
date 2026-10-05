@@ -15,11 +15,14 @@ jobs:
       - name: Install Buildozer dependencies
         run: |
           sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libsqlite3-dev gawk libffi-dev juice
-          pip install --upgrade buildozer cython virtualenv
+          sudo apt install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libsqlite3-dev gawk libffi-dev
+          pip install --upgrade "cython<3.0.0" buildozer virtualenv
 
       - name: Build with Buildozer
-        run: buildozer android debug
+        run: |
+          yes | buildozer android debug
+        env:
+          BUILDOZER_WARN_ON_ROOT: 0
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
