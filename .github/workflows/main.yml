@@ -3,21 +3,20 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Setup Python 3.9
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.9'
 
       - name: Install Buildozer dependencies
         run: |
           sudo apt update
           sudo apt install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libsqlite3-dev gawk libffi-dev
-          # Força o Cython clássico 0.29.x e trava o buildozer em versão ultra-estável para evitar warnings excessivos
-          pip install --upgrade "cython>=0.29.33,<3.0.0" "buildozer==1.5.0" virtualenv
+          pip install --upgrade "cython>=0.29.33,<3.0.0" buildozer virtualenv
 
       - name: Create buildozer.spec automatically
         run: |
@@ -29,7 +28,6 @@ jobs:
           source.dir = .
           source.include_exts = py,png,jpg,kv,atlas,txt
           version = 0.1
-          # Alinha a receita pedindo explicitamente o kivy estável
           requirements = python3,kivy==2.3.0
 
           android.api = 33
@@ -41,12 +39,11 @@ jobs:
           android.allow_backup = True
 
           [buildozer]
-          # Reduz o nível do log para 1 para evitar que o GitHub corte o texto devido ao tamanho
           log_level = 1
           warn_on_root = 0
           EOF
 
-      - name: Build with Buildozer
+      - name: Build APK with Buildozer
         run: |
           yes | buildozer android debug
         env:
@@ -55,5 +52,5 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: package
+          name: BioPoint-APK
           path: bin/*.apk
