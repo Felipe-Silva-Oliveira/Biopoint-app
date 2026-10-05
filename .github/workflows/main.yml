@@ -16,7 +16,8 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libsqlite3-dev gawk libffi-dev
-          pip install --upgrade "cython<3.0.0" buildozer virtualenv
+          # Força o Cython clássico 0.29.x e trava o buildozer em versão ultra-estável para evitar warnings excessivos
+          pip install --upgrade "cython>=0.29.33,<3.0.0" "buildozer==1.5.0" virtualenv
 
       - name: Create buildozer.spec automatically
         run: |
@@ -28,7 +29,9 @@ jobs:
           source.dir = .
           source.include_exts = py,png,jpg,kv,atlas,txt
           version = 0.1
-          requirements = python3,kivy
+          # Alinha a receita pedindo explicitamente o kivy estável
+          requirements = python3,kivy==2.3.0
+
           android.api = 33
           android.minapi = 21
           android.ndk = 25b
@@ -36,8 +39,10 @@ jobs:
           fullscreen = 1
           android.archs = arm64-v8a
           android.allow_backup = True
+
           [buildozer]
-          log_level = 2
+          # Reduz o nível do log para 1 para evitar que o GitHub corte o texto devido ao tamanho
+          log_level = 1
           warn_on_root = 0
           EOF
 
