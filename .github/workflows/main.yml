@@ -33,7 +33,7 @@ jobs:
           EOF
 
       - name: Build APK using Official Kivy Action
-        uses: kivy/action-buildozer@v1
+        uses: subzero-duck/action-buildozer@v1
         with:
           repository_root: .
           buildozer_version: 'stable'
