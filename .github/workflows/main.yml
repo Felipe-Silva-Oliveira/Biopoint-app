@@ -7,19 +7,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Python 3.9
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
-
-      - name: Install Buildozer and Downgrade Pip
-        run: |
-          sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libsqlite3-dev gawk libffi-dev
-          # O segredo está aqui: rebaixar o pip para uma versão que aceita os comandos clássicos do Buildozer
-          pip install --upgrade "pip<23.0"
-          pip install --upgrade "cython>=0.29.33,<3.0.0" "buildozer==1.5.0" virtualenv
-
       - name: Create buildozer.spec automatically
         run: |
           cat << 'EOF' > buildozer.spec
@@ -30,11 +17,11 @@ jobs:
           source.dir = .
           source.include_exts = py,png,jpg,kv,atlas,txt
           version = 0.1
-          requirements = python3,kivy==2.2.1
+          requirements = python3,kivy==2.3.0
 
-          android.api = 31
+          android.api = 33
           android.minapi = 21
-          android.ndk = 23b
+          android.ndk = 25b
           orientation = portrait
           fullscreen = 1
           android.archs = arm64-v8a
@@ -45,11 +32,13 @@ jobs:
           warn_on_root = 0
           EOF
 
-      - name: Build APK with Buildozer
+      - name: Build APK using Official Buildozer Docker Container
         run: |
-          yes | buildozer android debug
-        env:
-          BUILDOZER_WARN_ON_ROOT: 0
+          docker run --rm \
+            -v ${{ github.workspace }}:/home/user/hostdir \
+            -u root \
+            kivy/buildozer \
+            android debug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
