@@ -32,13 +32,12 @@ jobs:
           warn_on_root = 0
           EOF
 
-      - name: Build APK using Official Buildozer Docker Container
-        run: |
-          docker run --rm \
-            -v ${{ github.workspace }}:/home/user/hostdir \
-            -e BUILDOZER_WARN_ON_ROOT=0 \
-            kivy/buildozer \
-            android debug
+      - name: Build APK using Official Kivy Action
+        uses: kivy/action-buildozer@v1
+        with:
+          repository_root: .
+          buildozer_version: 'stable'
+          command: android debug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
