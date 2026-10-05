@@ -36,7 +36,7 @@ jobs:
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:/home/user/hostdir \
-            -u root \
+            -e BUILDOZER_WARN_ON_ROOT=0 \
             kivy/buildozer \
             android debug
 
