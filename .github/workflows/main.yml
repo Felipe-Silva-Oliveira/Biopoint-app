@@ -38,22 +38,18 @@ jobs:
           fullscreen = 1
           android.archs = arm64-v8a
           android.allow_backup = True
+          
+          # PARAMETRO CRUCIAL: Força o aceite de licenças de forma nativa pela ferramenta
+          android.accept_licenses = y
 
           [buildozer]
           log_level = 1
           warn_on_root = 0
           EOF
 
-      - name: Pre-accept Android Licenses and Build
+      - name: Build APK Clean
         run: |
-          # 1. Executa o buildozer em segundo plano por apenas 45 segundos para ele baixar a pasta do SDK e criar as ferramentas
-          timeout 45s buildozer android debug || true
-          
-          # 2. Responde "y" (sim) automaticamente para todas as licenças oficiais da Google direto no sdkmanager recém-baixado
-          # Isso instala o Aidl e as build-tools sem gerar o erro de Broken pipe
-          yes | /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          
-          # 3. Roda a compilação real com o ambiente totalmente licenciado
+          # Roda diretamente de forma limpa; o spec agora cuida do aceite automático
           buildozer android debug
 
       - name: Upload APK Artifact
