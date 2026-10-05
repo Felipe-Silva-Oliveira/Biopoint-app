@@ -18,6 +18,29 @@ jobs:
           sudo apt install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libsqlite3-dev gawk libffi-dev
           pip install --upgrade "cython<3.0.0" buildozer virtualenv
 
+      - name: Create buildozer.spec automatically
+        run: |
+          cat << 'EOF' > buildozer.spec
+          [app]
+          title = Bio Point
+          package.name = biopoint
+          package.domain = org.test
+          source.dir = .
+          source.include_exts = py,png,jpg,kv,atlas,txt
+          version = 0.1
+          requirements = python3,kivy
+          android.api = 33
+          android.minapi = 21
+          android.ndk = 25b
+          orientation = portrait
+          fullscreen = 1
+          android.archs = arm64-v8a
+          android.allow_backup = True
+          [buildozer]
+          log_level = 2
+          warn_on_root = 0
+          EOF
+
       - name: Build with Buildozer
         run: |
           yes | buildozer android debug
