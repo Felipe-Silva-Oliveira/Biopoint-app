@@ -34,8 +34,13 @@ jobs:
 
       - name: Build APK inside isolated Container
         run: |
-          # Baixa e usa a imagem oficial estável do Buildozer via Docker Hub
+          # Criamos as pastas antes para garantir permissão de escrita ao usuário comum
+          mkdir -p bin .buildozer
+          chmod -R 777 bin .buildozer
+          
+          # Forçamos o contêiner a rodar como usuário não-root (UID 1000) para pular a pergunta
           docker run --rm \
+            --user 1000:1000 \
             -v ${{ github.workspace }}:/home/user/hostdir \
             kivy/buildozer:latest \
             android debug
