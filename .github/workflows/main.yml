@@ -3,9 +3,21 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Buildozer dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libsqlite3-dev gawk libffi-dev python3-virtualenv
+          pip install --upgrade pip
+          pip install --upgrade "cython<3.0.0" buildozer
 
       - name: Create buildozer.spec automatically
         run: |
@@ -17,11 +29,11 @@ jobs:
           source.dir = .
           source.include_exts = py,png,jpg,kv,atlas,txt
           version = 0.1
-          requirements = python3,kivy==2.1.0
+          requirements = python3,kivy==2.3.0
 
-          android.api = 31
+          android.api = 33
           android.minapi = 21
-          android.ndk = 23b
+          android.ndk = 25b
           orientation = portrait
           fullscreen = 1
           android.archs = arm64-v8a
@@ -32,22 +44,14 @@ jobs:
           warn_on_root = 0
           EOF
 
-      - name: Build APK inside Legacy Environment
+      - name: Build APK with Buildozer and Patch Flag
         run: |
-          # Usamos uma imagem antiga e estável que suporta nativamente a flag --ignore-setup-py
-          docker run --rm \
-            -v ${{ github.workspace }}:/workspace \
-            -w /workspace \
-            ubuntu:18.04 /bin/bash -c "
-              apt-get update && \
-              DEBIAN_FRONTEND=noninteractive apt-get install -y git zip unzip openjdk-8-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libsqlite3-dev gawk libffi-dev python3 python3-pip python3-setuptools && \
-              pip3 install --upgrade 'pip<20.0' && \
-              pip3 install 'cython>=0.29.33,<3.0.0' 'buildozer==1.4.0' && \
-              yes | buildozer --warntoroot android debug
-            "
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: BioPoint-APK
-          path: bin/*.apk
+          # Inicializa a pasta para o Buildozer criar a estrutura interna
+          buildozer android debug || true
+          
+          # Remove e limpa a flag antiga diretamente dentro dos arquivos do python-for-android para impedir o erro
+          find /home/runner/.local/lib/ -name "toolchain.py" -exec sed -i 's/--ignore-setup-py//g' {} + || true
+          find /home/runner/ -name "toolchain.py" -exec sed -i 's/--ignore-setup-py//g' {} + || true
+          
+          # Roda a compilação real com a flag completamente neutralizada
+          yes | buildozer android debug
