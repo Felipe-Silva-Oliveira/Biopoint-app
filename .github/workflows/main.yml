@@ -32,18 +32,20 @@ jobs:
           warn_on_root = 0
           EOF
 
-      - name: Build APK inside isolated Container
+      - name: Build APK inside custom environment
         run: |
-          # Criamos as pastas antes para garantir permissão de escrita ao usuário comum
-          mkdir -p bin .buildozer
-          chmod -R 777 bin .buildozer
-          
-          # Forçamos o contêiner a rodar como usuário não-root (UID 1000) para pular a pergunta
+          # Usamos uma imagem oficial do Ubuntu e instalamos o buildozer manualmente sem travas de root
           docker run --rm \
-            --user 1000:1000 \
-            -v ${{ github.workspace }}:/home/user/hostdir \
-            kivy/buildozer:latest \
-            android debug
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            ubuntu:22.04 /bin/bash -c "
+              apt-get update && \
+              DEBIAN_FRONTEND=noninteractive apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libsqlite3-dev gawk libffi-dev python3 python3-pip python3-venv && \
+              pip3 install --upgrade pip && \
+              pip3 install 'cython>=0.29.33,<3.0.0' buildozer virtualenv && \
+              # Injetamos a resposta 'y' diretamente por um cano contínuo para burlar qualquer prompt interativo
+              yes | buildozer --warntoroot android debug
+            "
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
