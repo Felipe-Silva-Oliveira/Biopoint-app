@@ -44,7 +44,7 @@ jobs:
           warn_on_root = 0
           EOF
 
-      - name: Build APK with Buildozer and Patch Flag
+      - name: Build APK Clean
         run: |
           # Inicializa a pasta para o Buildozer criar a estrutura interna
           buildozer android debug || true
