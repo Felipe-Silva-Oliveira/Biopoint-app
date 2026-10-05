@@ -38,18 +38,29 @@ jobs:
           fullscreen = 1
           android.archs = arm64-v8a
           android.allow_backup = True
-          
-          # PARAMETRO CRUCIAL: Força o aceite de licenças de forma nativa pela ferramenta
-          android.accept_licenses = y
 
           [buildozer]
           log_level = 1
           warn_on_root = 0
           EOF
 
-      - name: Build APK Clean
+      - name: Build APK with Dynamic License Injection
         run: |
-          # Roda diretamente de forma limpa; o spec agora cuida do aceite automático
+          # 1. Inicia o buildozer. Ele vai baixar o SDK da Google e falhar na checagem inicial da licença
+          buildozer android debug || true
+          
+          # 2. Varre o sistema para encontrar o local exato onde o sdkmanager foi extraído
+          SDKMANAGER_PATH=$(find /home/runner/ -name "sdkmanager" -type f | head -n 1)
+          
+          # 3. Se encontrar o gerenciador, injeta a aprovação automática de todas as licenças
+          if [ ! -z "$SDKMANAGER_PATH" ]; then
+            echo "Gerenciador do SDK encontrado em: $SDKMANAGER_PATH"
+            yes | $SDKMANAGER_PATH --licenses || true
+          else
+            echo "Aviso: sdkmanager não foi encontrado na primeira passagem."
+          fi
+          
+          # 4. Roda o buildozer novamente; agora as licenças já estarão gravadas no disco do servidor
           buildozer android debug
 
       - name: Upload APK Artifact
